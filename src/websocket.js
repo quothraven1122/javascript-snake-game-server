@@ -63,5 +63,25 @@ export function initWebSocket(server) {
 
       console.log(`Room ${roomId} destroyed because a player disconnected`);
     });
+    ws.on("message", (msg) => {
+      const data = JSON.parse(msg);
+
+      const room = rooms[ws.roomId];
+      if (!room) return;
+
+      switch (data.type) {
+        case "chat":
+          room.players.forEach((player) =>
+            player.send(
+              JSON.stringify({
+                type: "chat",
+                playerId: ws.playerId,
+                message: data.message,
+              })
+            )
+          );
+          break;
+      }
+    });
   });
 }
