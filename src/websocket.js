@@ -65,7 +65,7 @@ export function initWebSocket(server) {
     });
     ws.on("message", (msg) => {
       console.log("Received from", ws.playerId, ":", msg.toString());
-      const data = JSON.parse(msg);
+      const data = JSON.parse(msg.data);
 
       const room = rooms[ws.roomId];
       if (!room) return;
