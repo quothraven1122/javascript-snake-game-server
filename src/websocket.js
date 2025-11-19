@@ -6,8 +6,8 @@ export function initWebSocket(server) {
   let gameState = { p1: null, p2: null };
 
   wss.on("connection", (ws, req) => {
-    console.log(req.socket.remoteAddress);
     players.push(ws);
+    console.log(players.length);
 
     ws.on("message", (msg) => {
       console.log("Received:", msg.toString());
