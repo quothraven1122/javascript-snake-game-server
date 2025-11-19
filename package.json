@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/quothraven1122/javascript-snake-game-server#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
   }
 }
