@@ -20,7 +20,6 @@ export function initWebSocket(server) {
     const roomId = randomUUID();
     rooms[roomId] = {
       players: [waitingPlayer, ws],
-      board: createInitialBoard(),
     };
     waitingPlayer.roomId = roomId;
     waitingPlayer.playerId = "p1";
