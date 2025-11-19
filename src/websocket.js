@@ -33,7 +33,7 @@ export function initWebSocket(server) {
         JSON.stringify({
           type: "matched",
           roomId,
-          youAre: p.playerId,
+          playerId: p.playerId,
           board: rooms[roomId].board,
         })
       );
