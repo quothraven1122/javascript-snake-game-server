@@ -9,60 +9,8 @@ export function initWebSocket(server) {
 
   wss.on("connection", (ws, req) => {
     console.log("New Player Connected");
-    // 1) make player wait if no one is waiting
-    if (!waitingPlayer) {
-      waitingPlayer = ws;
-      ws.send(JSON.stringify({ type: "waiting" }));
-      return;
-    }
 
-    // 2) if two players are collected - make a room
-    const roomId = randomUUID();
-    rooms[roomId] = {
-      players: [waitingPlayer, ws],
-    };
-    waitingPlayer.roomId = roomId;
-    waitingPlayer.playerId = "p1";
-    ws.roomId = roomId;
-    ws.playerId = "p2";
-
-    //notify both players of the match
-    rooms[roomId].players.forEach((p) => {
-      p.send(
-        JSON.stringify({
-          type: "matched",
-          roomId,
-          playerId: p.playerId,
-          board: rooms[roomId].board,
-        })
-      );
-    });
-    waitingPlayer = null;
-
-    ws.on("close", () => {
-      const roomId = ws.roomId;
-      if (!roomId) return;
-
-      const room = rooms[roomId];
-      if (!room) return;
-
-      //find remaining player
-      const otherPlayer = room.players.find((p) => p !== ws);
-
-      //delete room
-      delete rooms[roomId];
-
-      //put remaining player back in matchmaking
-      if (otherPlayer && otherPlayer.readyState === otherPlayer.OPEN) {
-        waitingPlayer = otherPlayer;
-        otherPlayer.roomId = null;
-        otherPlayer.playerId = null;
-
-        otherPlayer.send(JSON.stringify({ type: "waiting" }));
-      }
-
-      console.log(`Room ${roomId} destroyed because a player disconnected`);
-    });
+    //1) 채팅 및 게임 인터렉션 로직
     ws.on("message", (msg) => {
       const text = msg.toString();
       const data = JSON.parse(text);
@@ -84,5 +32,61 @@ export function initWebSocket(server) {
           break;
       }
     });
+
+    //2) 방 나갈때 로직
+    ws.on("close", () => {
+      const roomId = ws.roomId;
+      if (!roomId) return;
+
+      const room = rooms[roomId];
+      if (!room) return;
+
+      //상대가 누군지 확인
+      const otherPlayer = room.players.find((p) => p !== ws);
+
+      //방 파괴
+      delete rooms[roomId];
+
+      //상대방을 다시 매치메이킹에 넣기
+      if (otherPlayer && otherPlayer.readyState === otherPlayer.OPEN) {
+        waitingPlayer = otherPlayer;
+        otherPlayer.roomId = null;
+        otherPlayer.playerId = null;
+
+        otherPlayer.send(JSON.stringify({ type: "waiting" }));
+      }
+
+      console.log(`Room ${roomId} destroyed because a player disconnected`);
+    });
+
+    //3) 매치메이킹 로직
+    if (!waitingPlayer) {
+      waitingPlayer = ws;
+      ws.send(JSON.stringify({ type: "waiting" }));
+      return;
+    }
+
+    // 두사람이 모이면 방 만들어주기
+    const roomId = randomUUID();
+    rooms[roomId] = {
+      players: [waitingPlayer, ws],
+    };
+    waitingPlayer.roomId = roomId;
+    waitingPlayer.playerId = "p1";
+    ws.roomId = roomId;
+    ws.playerId = "p2";
+
+    //플레이어 모두에게 매치 성사됨을 알리기
+    rooms[roomId].players.forEach((p) => {
+      p.send(
+        JSON.stringify({
+          type: "matched",
+          roomId,
+          playerId: p.playerId,
+          board: rooms[roomId].board,
+        })
+      );
+    });
+    waitingPlayer = null;
   });
 }
