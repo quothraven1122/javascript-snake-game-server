@@ -64,8 +64,8 @@ export function initWebSocket(server) {
       console.log(`Room ${roomId} destroyed because a player disconnected`);
     });
     ws.on("message", (msg) => {
-      console.log("Received from", ws.playerId, ":", msg.toString());
-      const data = JSON.parse(msg.data);
+      const text = msg.toString();
+      const data = JSON.parse(text);
 
       const room = rooms[ws.roomId];
       if (!room) return;
