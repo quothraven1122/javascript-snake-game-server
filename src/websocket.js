@@ -61,7 +61,7 @@ export function initWebSocket(server) {
         otherPlayer.send(JSON.stringify({ type: "waiting" }));
       }
 
-      console.log(`Room ${roomId} destroyed because a player disconnected`);
+      console.log(`Room ${ws.roomId} destroyed because a player disconnected`);
     });
 
     //3) 매치메이킹 로직
