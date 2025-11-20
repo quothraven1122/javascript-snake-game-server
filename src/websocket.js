@@ -1,6 +1,8 @@
 import { WebSocketServer } from "ws";
 import { randomUUID } from "crypto";
 import { Snake } from "./data/Snake.js";
+import { GameData } from "./data/GameData.js";
+import { BoardData } from "./data/BoardData.js";
 
 let waitingPlayer = null;
 const rooms = {};
@@ -76,8 +78,8 @@ export function initWebSocket(server) {
     rooms[roomId] = {
       players: [waitingPlayer, ws],
       snakes: {
-        p1: new Snake(3, { x: 4, y: 1 }),
-        p2: new Snake(3, { x: 4, y: 13 }),
+        p1: new Snake(GameData.size, { x: GameData.p1.x, y: GameData.p1.y }),
+        p2: new Snake(GameData.size, { x: GameData.p2.x, y: GameData.p2.y }),
       },
     };
     const room = rooms[roomId];
@@ -100,11 +102,15 @@ export function initWebSocket(server) {
         if (!s.isDead) s.move();
       });
 
-      const SIZE = 20;
       // 충돌 체크 (벽)
       Object.values(snakes).forEach((s) => {
         const head = s.body[0];
-        if (head.x < 0 || head.x >= SIZE || head.y < 0 || head.y >= SIZE) {
+        if (
+          head.x < 0 ||
+          head.x >= BoardData.SIZE ||
+          head.y < 0 ||
+          head.y >= BoardData.SIZE
+        ) {
           s.isDead = true;
         }
       });
@@ -159,6 +165,6 @@ export function initWebSocket(server) {
         p2: { body: snakes.p2.body },
       };
       players.forEach((p) => p.send(JSON.stringify(gameState)));
-    }, 200);
+    }, GameData.speed);
   });
 }
