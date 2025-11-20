@@ -14,15 +14,12 @@ export function initWebSocket(server) {
     //1) 채팅 및 게임 인터렉션 로직
     //채팅 로직
     ws.on("message", (msg) => {
-      const text = msg.toString();
-      const data = JSON.parse(text);
+      const data = JSON.parse(msg.toString());
 
-      const room = rooms[ws.roomId];
-      if (!room) return;
-
-      switch (data.type) {
-        case "chat":
-          room.players.forEach((player) =>
+      // Handle chat separately (even if not matched yet)
+      if (data.type === "chat") {
+        if (ws.roomId && rooms[ws.roomId]) {
+          rooms[ws.roomId].players.forEach((player) =>
             player.send(
               JSON.stringify({
                 type: "chat",
@@ -31,30 +28,29 @@ export function initWebSocket(server) {
               })
             )
           );
-          break;
-        //게임 로직
-        case "dir":
-          const snake = room.snakes[ws.playerId];
-          if (snake && !snake.isDead) {
-            snake.setDirection(data.direction);
-          }
-          break;
+        }
+        return;
+      }
+
+      const room = rooms[ws.roomId];
+      if (!room) return;
+
+      if (data.type === "dir") {
+        const snake = room.snakes[ws.playerId];
+        if (snake && !snake.isDead) snake.setDirection(data.direction);
       }
     });
 
     //2) 방 나갈때 로직
     ws.on("close", () => {
-      const roomId = ws.roomId;
-      if (!roomId) return;
-
-      const room = rooms[roomId];
+      const room = rooms[ws.roomId];
       if (!room) return;
 
       //상대가 누군지 확인
       const otherPlayer = room.players.find((p) => p !== ws);
 
       //방 파괴
-      delete rooms[roomId];
+      delete rooms[ws.roomId];
 
       //상대방을 다시 매치메이킹에 넣기
       if (otherPlayer && otherPlayer.readyState === otherPlayer.OPEN) {
@@ -80,8 +76,8 @@ export function initWebSocket(server) {
     rooms[roomId] = {
       players: [waitingPlayer, ws],
       snakes: {
-        p1: new Snake(3, { x: 4, y: 1 }), // example
-        p2: new Snake(3, { x: 4, y: 13 }), // example
+        p1: new Snake(3, { x: 4, y: 1 }),
+        p2: new Snake(3, { x: 4, y: 13 }),
       },
     };
     const room = rooms[roomId];
@@ -92,14 +88,9 @@ export function initWebSocket(server) {
 
     //플레이어 모두에게 매치 성사됨을 알리기
     room.players.forEach((p) => {
-      p.send(
-        JSON.stringify({
-          type: "matched",
-          roomId,
-          playerId: p.playerId,
-        })
-      );
+      p.send(JSON.stringify({ type: "matched", playerId: p.playerId }));
     });
+    waitingPlayer = null;
 
     // 4) 게임 루프 시작
     room.intervalId = setInterval(() => {
@@ -119,10 +110,8 @@ export function initWebSocket(server) {
       });
 
       // 뱀끼리 충돌 체크
-      const p1 = snakes.p1;
-      const p2 = snakes.p2;
-      const p1Head = p1.body[0];
-      const p2Head = p2.body[0];
+      const [p1, p2] = [snakes.p1, snakes.p2];
+      const [p1Head, p2Head] = [p1.body[0], p2.body[0]];
 
       // p1 머리가 p2 몸에 부딪힘
       if (
@@ -171,7 +160,5 @@ export function initWebSocket(server) {
       };
       players.forEach((p) => p.send(JSON.stringify(gameState)));
     }, 200);
-
-    waitingPlayer = null;
   });
 }
