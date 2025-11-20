@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
 import { randomUUID } from "crypto";
-import { Snake } from "./data/Snake";
+import { Snake } from "./data/Snake.js";
 
 let waitingPlayer = null;
 const rooms = {};
